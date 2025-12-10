@@ -5,25 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Bitcoin Blitz • 5-Second Higher/Lower</title>
   <link rel="stylesheet" href="style.css"/>
-  <link rel="icon" href="https://bitcoin.org/img/icons/opengraph.png" type="image/png">
+  <link rel="icon" href="https://bitcoin.org/img/icons/opengraph.png">
 </head>
 <body>
-  <div class="container">
-    <h1>Bitcoin Blitz</h1>
-    <div class="price" id="price">$--,---</div>
-    <div class="timer" id="timer">5.0</div>
 
-    <div class="choices">
-      <button id="higher" class="btn higher">HIGHER</button>
-      <button id="lower" class="btn lower">LOWER</button>
+  <!-- Welcome Screen -->
+  <div id="welcome" class="screen active">
+    <div class="container">
+      <h1>Bitcoin Blitz</h1>
+      <div class="logo">₿</div>
+      <h2>5-Second Higher or Lower</h2>
+      <div class="instructions">
+        <p>At the start of each round you’ll see Bitcoin’s price.</p>
+        <p>You have <strong>5 seconds</strong> to predict if the price will be <strong>HIGHER</strong> or <strong>LOWER</strong> at the end.</p>
+        <p>Live price updates every second — don’t overthink it!</p>
+        <p>No guess in time → streak lost.</p>
+        <p>Build the longest streak!</p>
+      </div>
+      <button id="startBtn" class="btn start">START GAME</button>
+      <div class="highscore-display">
+        Best Streak: <span id="globalHigh">0</span> 🔥
+      </div>
     </div>
+  </div>
 
-    <div class="info">
-      <div>Streak: <span id="streak">0</span> 🔥</div>
-      <div>High Score: <span id="highscore">0</span></div>
+  <!-- Game Screen -->
+  <div id="game" class="screen">
+    <div class="container">
+      <h1>Bitcoin Blitz</h1>
+
+      <div class="prices">
+        <div class="price-box">
+          <small>Start Price</small>
+          <div id="startPrice" class="price locked">$--,---</div>
+        </div>
+        <div class="price-box">
+          <small>Live Price</small>
+          <div id="livePrice" class="price live">$--,---</div>
+        </div>
+      </div>
+
+      <div class="timer" id="timer">5.0</div>
+
+      <div class="choices">
+        <button id="higher" class="btn higher">HIGHER</button>
+        <button id="lower" class="btn lower">LOWER</button>
+      </div>
+
+      <div class="info">
+        <div>Streak: <span id="streak">0</span> 🔥</div>
+      </div>
+
+      <div class="status" id="status"></div>
     </div>
-
-    <div class="status" id="status"></div>
   </div>
 
   <script src="script.js"></script>

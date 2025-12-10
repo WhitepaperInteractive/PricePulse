@@ -1,90 +1,72 @@
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #0f0f1a;
-  color: #fff;
-  height: 100vh;
+/* ... keep everything from before, just add/replace these */
+
+.screen {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  user-select: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.screen.active {
+  opacity: 1;
+  pointer-events: all;
 }
 
-.container {
-  text-align: center;
-  padding: 2rem;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-  max-width: 400px;
-  width: 90%;
-}
-
-h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  background: linear-gradient(90deg, #f7931a, #f0a500);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.price {
-  font-size: 3.5rem;
-  font-weight: bold;
+.logo {
+  font-size: 8rem;
   margin: 1rem 0;
   color: #f7931a;
 }
 
-.timer {
-  font-size: 4rem;
-  font-weight: bold;
-  margin: 1rem 0;
-  color: #ff3366;
-  text-shadow: 0 0 10px #ff3366;
-}
-
-.choices {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin: 2rem 0;
-}
-
-.btn {
-  flex: 1;
+.instructions {
+  background: rgba(255,255,255,0.05);
   padding: 1.5rem;
+  border-radius: 12px;
+  margin: 2rem 0;
+  line-height: 1.6;
+  font-size: 1.1rem;
+}
+
+.btn.start {
+  background: #f7931a;
+  padding: 1.2rem 3rem;
   font-size: 1.8rem;
-  font-weight: bold;
-  border: none;
-  border-radius: 15px;
-  cursor: pointer;
-  transition: all 0.2s;
+  margin: 2rem 0;
+  box-shadow: 0 0 25px rgba(247,147,26,0.6);
 }
 
-.higher {
-  background: #00cc66;
-  box-shadow: 0 0 20px rgba(0,204,102,0.5);
-}
-
-.lower {
-  background: #ff3366;
-  box-shadow: 0 0 20px rgba(255,51,102,0.5);
-}
-
-.btn:active {
-  transform: scale(0.95);
-}
-
-.info {
-  font-size: 1.4rem;
-  margin: 1.5rem 0;
-  display: flex;
-  justify-content: space-around;
-}
-
-.status {
-  margin-top: 1rem;
+.highscore-display {
+  margin-top: 2rem;
   font-size: 1.5rem;
   font-weight: bold;
-  min-height: 2rem;
+  color: #f7931a;
+}
+
+.prices {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.price-box {
+  text-align: center;
+}
+
+.price {
+  font-size: 2.8rem;
+  font-weight: bold;
+  margin-top: 0.5rem;
+}
+
+.price.locked { color: #888; }
+.price.live   { color: #f7931a; font-size: 3.2rem; }
+
+.timer {
+  font-size: 5rem;
+  margin: 1rem 0 1.5rem;
 }

@@ -1,109 +1,138 @@
-const priceEl = document.getElementById('price');
-const timerEl = document.getElementById('timer');
-const higherBtn = document.getElementById('higher');
-const lowerBtn = document.getElementById('lower');
-const streakEl = document.getElementById('streak');
-const highscoreEl = document.getElementById('highscore');
-const statusEl = document.getElementById('status');
+// Elements
+const welcomeScreen = document.getElementById('welcome');
+const gameScreen    = document.getElementById('game');
+const startBtn      = document.getElementById('startBtn');
 
-let currentPrice = 0;
+const startPriceEl  = document.getElementById('startPrice');
+const livePriceEl   = document.getElementById('livePrice');
+const timerEl       = document.getElementById('timer');
+const higherBtn     = document.getElementById('higher');
+const lowerBtn      = document.getElementById('lower');
+const streakEl      = document.getElementById('streak');
+const statusEl      = document.getElementById('status');
+const globalHighEl  = document.getElementById('globalHigh');
+
+// Game state
 let startPrice = 0;
-let timer = 5;
-let interval;
-let timerInterval;
+let timer = 5.0;
 let guess = null;
 let streak = 0;
-let highscore = localStorage.getItem('btcBlitzHigh') || 0;
-highscoreEl.textContent = highscore;
+let highscore = parseInt(localStorage.getItem('btcBlitzHigh') || '0');
+let priceInterval, timerInterval;
 
-// Fast, free, reliable BTC price API (no key needed)
-const PRICE_API = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd';
+globalHighEl.textContent = highscore;
+streakEl.textContent = streak;
 
-async function fetchPrice() {
+// Free, fast, no-key API
+const API = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd';
+
+async function getPrice() {
   try {
-    const res = await fetch(PRICE_API + '&t=' + Date.now()); // cache buster
+    const res = await fetch(API + '&t=' + Date.now());
     const data = await res.json();
     return data.bitcoin.usd;
   } catch (e) {
-    // Fallback mock during rare downtime
-    return currentPrice || 95000 + Math.random() * 1000;
+    return 95000 + Math.random() * 2000; // fallback
   }
 }
 
-function formatPrice(p) {
-  return '$' + Math.round(p).toLocaleString();
+function format(price) {
+  return '$' + Math.round(price).toLocaleString();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startGame() {
+  streak = 0;
+  streakEl.textContent = streak;
+  showScreen('game');
+  startRound();
 }
 
 function startRound() {
   guess = null;
+  statusEl.textContent = '';
   higherBtn.disabled = false;
   lowerBtn.disabled = false;
-  statusEl.textContent = '';
   timer = 5.0;
+  timerEl.textContent = '5.0';
 
-  fetchPrice().then(price => {
+  getPrice().then(price => {
     startPrice = price;
-    currentPrice = price;
-    priceEl.textContent = formatPrice(price);
+    startPriceEl.textContent = format(price);
+    livePriceEl.textContent = format(price);
   });
 
-  // Update price every second
-  clearInterval(interval);
-  interval = setInterval(async () => {
-    currentPrice = await fetchPrice();
-    priceEl.textContent = formatPrice(currentPrice);
+  // Live price every second
+  clearInterval(priceInterval);
+  priceInterval = setInterval(async () => {
+    const p = await getPrice();
+    livePriceEl.textContent = format(p);
   }, 1000);
 
-  // Countdown
+  // countdown
   clearInterval(timerInterval);
-  timerEl.textContent = '5.0';
   timerInterval = setInterval(() => {
     timer -= 0.1;
     timerEl.textContent = timer.toFixed(1);
 
     if (timer <= 0) {
+      timer = 0;
+      timerEl.textContent = '0.0';
+      clearInterval(timerInterval);
       endRound();
     }
   }, 100);
 }
 
 function endRound() {
-  clearInterval(interval);
+  clearInterval(priceInterval);
   clearInterval(timerInterval);
   higherBtn.disabled = true;
   lowerBtn.disabled = true;
 
-  fetchPrice().then(finalPrice => {
+  getPrice().then(finalPrice => {
     const won = guess === 'higher' ? finalPrice > startPrice :
-                guess === 'lower' ? finalPrice < startPrice : false;
+                guess === 'lower'  ? finalPrice < startPrice : false;
 
     if (!guess) {
-      statusEl.textContent = '⏰ Too slow! Streak lost.';
+      statusEl.textContent = 'Too slow! No guess.';
       statusEl.style.color = '#ff3366';
-      streak = 0;
     } else if (won) {
       streak++;
+      statusEl.textContent = `CORRECT! Streak: ${streak} 🔥`;
+      statusEl.style.color = '#00cc66';
+
       if (streak > highscore) {
         highscore = streak;
         localStorage.setItem('btcBlitzHigh', highscore);
-        highscoreEl.textContent = highscore;
+        globalHighEl.textContent = highscore;
       }
-      statusEl.textContent = `Correct! +${streak} 🔥`;
-      statusEl.style.color = '#00cc66';
     } else {
-      statusEl.textContent = `Wrong! Was ${(finalPrice - startPrice).toFixed(2)}`;
+      statusEl.textContent = `Wrong → final was ${format(finalPrice)}`;
       statusEl.style.color = '#ff3366';
-      streak = 0;
     }
 
     streakEl.textContent = streak;
-    setTimeout(startRound, 2000);
+
+    // Any loss → back to welcome after 3 seconds
+    setTimeout(() => {
+      if (!won || !guess) {
+        showScreen('welcome');
+      } else {
+        startRound(); // keep playing on win
+      }
+    }, won && guess ? 1500 : 3000);
   });
 }
 
-// Button clicks
+// Button handlers
 higherBtn.onclick = () => guess = 'higher';
-lowerBtn.onclick = () => guess = 'lower';
+lowerBtn.onclick  = () => guess = 'lower';
+startBtn.onclick   = startGame;
 
-// Start instantly
-startRound();
+// Start on load → show welcome
+showScreen('welcome');
