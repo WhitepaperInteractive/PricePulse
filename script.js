@@ -14,6 +14,7 @@ const globalHighEl  = document.getElementById('globalHigh');
 
 // Game state
 let startPrice = 0;
+let lastKnownPrice = 0;
 let timer = 5.0;
 let guess = null;
 let streak = 0;
@@ -23,17 +24,41 @@ let priceInterval, timerInterval;
 globalHighEl.textContent = highscore;
 streakEl.textContent = streak;
 
-// Free, fast, no-key API
-const API = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd';
+// Primary: Mempool.Space (CORS-enabled, fresh prices)
+const PRIMARY_API = 'https://mempool.space/api/v1/prices';
+// Backup: Coinbase (rock-solid fallback)
+const BACKUP_API = 'https://api.coinbase.com/v2/prices/BTC-USD/spot';
 
-async function getPrice() {
-  try {
-    const res = await fetch(API + '&t=' + Date.now());
-    const data = await res.json();
-    return data.bitcoin.usd;
-  } catch (e) {
-    return 95000 + Math.random() * 2000; // fallback
+async function getPrice(retries = 2) {
+  const apis = [PRIMARY_API, BACKUP_API]; // Try primary first, then backup
+  for (let api of apis) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await fetch(api + (api === PRIMARY_API ? '' : '') + '&t=' + Date.now());
+        if (!res.ok) throw new Error('API not OK');
+        const data = await res.json();
+        let price;
+        if (api === PRIMARY_API) {
+          price = data.USD;
+        } else {
+          price = parseFloat(data.data.amount);
+        }
+        lastKnownPrice = price;
+        console.log(`API fetch success (${api.includes('mempool') ? 'Mempool' : 'Coinbase'}): $${price.toLocaleString()}`);
+        return price;
+      } catch (e) {
+        console.warn(`Fetch failed for ${api} (attempt ${i+1}):`, e.message);
+        if (i === retries - 1) {
+          // Move to next API
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
   }
+  // Ultimate fallback
+  console.warn('All APIs failed - using last known:', lastKnownPrice);
+  return lastKnownPrice || 92500;
 }
 
 function format(price) {
@@ -62,18 +87,19 @@ function startRound() {
 
   getPrice().then(price => {
     startPrice = price;
+    lastKnownPrice = price;
     startPriceEl.textContent = format(price);
     livePriceEl.textContent = format(price);
   });
 
-  // Live price every second
+  // Live price every 1 second (now feasible with Mempool)
   clearInterval(priceInterval);
   priceInterval = setInterval(async () => {
     const p = await getPrice();
     livePriceEl.textContent = format(p);
   }, 1000);
 
-  // countdown
+  // Countdown
   clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     timer -= 0.1;
@@ -118,12 +144,11 @@ function endRound() {
 
     streakEl.textContent = streak;
 
-    // Any loss → back to welcome after 3 seconds
     setTimeout(() => {
       if (!won || !guess) {
         showScreen('welcome');
       } else {
-        startRound(); // keep playing on win
+        startRound();
       }
     }, won && guess ? 1500 : 3000);
   });
