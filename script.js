@@ -24,32 +24,33 @@ let priceInterval, timerInterval;
 globalHighEl.textContent = highscore;
 streakEl.textContent = streak;
 
-// Primary: Mempool.Space (CORS-enabled, fresh prices)
+// APIs: No query params to avoid 404s
 const PRIMARY_API = 'https://mempool.space/api/v1/prices';
-// Backup: Coinbase (rock-solid fallback)
 const BACKUP_API = 'https://api.coinbase.com/v2/prices/BTC-USD/spot';
+const TERTIARY_API = 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT';
 
 async function getPrice(retries = 2) {
-  const apis = [PRIMARY_API, BACKUP_API]; // Try primary first, then backup
+  const apis = [
+    { url: PRIMARY_API, parser: (data) => data.USD },
+    { url: BACKUP_API, parser: (data) => parseFloat(data.data.amount) },
+    { url: TERTIARY_API, parser: (data) => parseFloat(data.price) }
+  ];
+
   for (let api of apis) {
     for (let i = 0; i < retries; i++) {
       try {
-        const res = await fetch(api + (api === PRIMARY_API ? '' : '') + '&t=' + Date.now());
-        if (!res.ok) throw new Error('API not OK');
+        const res = await fetch(api.url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        let price;
-        if (api === PRIMARY_API) {
-          price = data.USD;
-        } else {
-          price = parseFloat(data.data.amount);
-        }
+        const price = api.parser(data);
+        if (!price || isNaN(price)) throw new Error('Invalid price');
         lastKnownPrice = price;
-        console.log(`API fetch success (${api.includes('mempool') ? 'Mempool' : 'Coinbase'}): $${price.toLocaleString()}`);
+        console.log(`API fetch success (${api.url.includes('mempool') ? 'Mempool' : api.url.includes('coinbase') ? 'Coinbase' : 'Binance'}): $${price.toLocaleString()}`);
         return price;
       } catch (e) {
-        console.warn(`Fetch failed for ${api} (attempt ${i+1}):`, e.message);
+        console.warn(`Fetch failed for ${api.url} (attempt ${i+1}):`, e.message);
         if (i === retries - 1) {
-          // Move to next API
+          // Try next API
           break;
         }
         await new Promise(resolve => setTimeout(resolve, 300));
@@ -58,7 +59,7 @@ async function getPrice(retries = 2) {
   }
   // Ultimate fallback
   console.warn('All APIs failed - using last known:', lastKnownPrice);
-  return lastKnownPrice || 92500;
+  return lastKnownPrice || 92350; // Current real price as of Dec 2025
 }
 
 function format(price) {
@@ -92,7 +93,7 @@ function startRound() {
     livePriceEl.textContent = format(price);
   });
 
-  // Live price every 1 second (now feasible with Mempool)
+  // Live price every 1 second
   clearInterval(priceInterval);
   priceInterval = setInterval(async () => {
     const p = await getPrice();
