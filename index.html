@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bitcoin Blitz • 5-Second Higher/Lower</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" href="https://bitcoin.org/img/icons/opengraph.png" type="image/png">
+</head>
+<body>
+  <div class="container">
+    <h1>Bitcoin Blitz</h1>
+    <div class="price" id="price">$--,---</div>
+    <div class="timer" id="timer">5.0</div>
+
+    <div class="choices">
+      <button id="higher" class="btn higher">HIGHER</button>
+      <button id="lower" class="btn lower">LOWER</button>
+    </div>
+
+    <div class="info">
+      <div>Streak: <span id="streak">0</span> 🔥</div>
+      <div>High Score: <span id="highscore">0</span></div>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
